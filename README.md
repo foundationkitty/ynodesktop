@@ -63,7 +63,7 @@ To build the project, use the following command:
 yarn dist
 ```
 
-If you need to build the project without Discord RPC, use the following command:
+If you need to build the project without Discord RPC, use the following command and edit main entrypoint in package.json:
 
 ```sh
 yarn dist-nodrpc
