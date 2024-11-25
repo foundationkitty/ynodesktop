@@ -1,21 +1,18 @@
-const {
-  app,
-  BrowserWindow,
-  session,
-  ipcMain,
-  dialog,
-  shell,
-} = require("electron");
-const contextMenu = require("electron-context-menu");
-const DiscordRPC = require("discord-rpc");
-const Store = require("electron-store");
-const promptInjection = require("./scripts/promptinjection");
-const titlebar = require("./scripts/titlebar");
-const { updatePresence } = require("./scripts/discordRpcUtils");
-const path = require("path");
-const { parseGameName, isDreamWorldMap } = require("./scripts/utils");
+import { app, BrowserWindow, session, ipcMain, dialog, shell } from 'electron';
+import contextMenu from 'electron-context-menu';
+import DiscordRPC from 'discord-rpc';
+import Store from 'electron-store';
+import promptInjection from './scripts/promptinjection.js';
+import titlebar from './scripts/titlebar.js';
+import { updatePresence } from './scripts/discordRpcUtils.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { parseGameName, isDreamWorldMap } from './scripts/utils.js';
 
 const store = new Store();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 contextMenu({
   showSelectAll: false,
@@ -98,7 +95,7 @@ const createWindow = () => {
     frame: true,
     titleBarStyle: "hidden",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: join(__dirname, "preload.js"),
       backgroundThrottling: false,
     },
   });

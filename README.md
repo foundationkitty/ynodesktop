@@ -1,3 +1,4 @@
+(personal project fork to use current electron verion. feel free to copy any changes from this, i'll possibly pr this in the future)
 
 ![ynodesk](https://user-images.githubusercontent.com/2998216/201456135-270da105-a4fa-4976-a69a-3a69e5d3fe59.png)
 
@@ -30,7 +31,7 @@ To set up the project locally, you need to have [Node.js](https://nodejs.org/) a
 1. Clone the repository:
 
 ```sh
-git clone https://github.com/joaovitorbf/ynodesktop.git
+git clone https://github.com/foundationkitty/ynodesktop.git
 
 cd ynodesktop
 ```
