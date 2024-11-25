@@ -21,7 +21,7 @@ Created as a simple Electron wrapper around the website, with optional `discord-
 
 The releases are currently Windows-only.
 
-[Click here to go to the download page for the latest release.](https://github.com/joaovitorbf/ynodesktop/releases/latest)
+[Click here to go to the download page for the latest release.](https://github.com/aguish/ynodesktop/releases/latest)
 
 ## Development Setup
 
@@ -30,7 +30,7 @@ To set up the project locally, you need to have [Node.js](https://nodejs.org/) a
 1. Clone the repository:
 
 ```sh
-git clone https://github.com/joaovitorbf/ynodesktop.git
+git clone https://github.com/aguish/ynodesktop.git
 
 cd ynodesktop
 ```
