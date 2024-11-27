@@ -7,21 +7,22 @@ const {
   shell,
 } = require("electron");
 const contextMenu = require("electron-context-menu");
-const DiscordRPC = require("discord-rpc");
 const Store = require("electron-store");
 const promptInjection = require("./scripts/promptinjection");
 const titlebar = require("./scripts/titlebar");
-const { updatePresence } = require("./scripts/discordRpcUtils");
+const { updateRichPresence, connectDiscordRpc } = require("./scripts/discordRpcUtils");
 const path = require("path");
 const { parseGameName, isDreamWorldMap } = require("./scripts/utils");
 
 const store = new Store();
 
+let mainWindow; // Reference to the main window
+
 contextMenu({
   showSelectAll: false,
   showSearchWithGoogle: false,
   showInspectElement: false,
-  append: (defaultActions, params, browserWindow) => [
+  append: (browserWindow) => [
     {
       label: "Force Reload",
       click: () => {
@@ -85,11 +86,8 @@ contextMenu({
   ],
 });
 
-let client = new DiscordRPC.Client({ transport: "ipc" });
-client.login({ clientId: "1028080411772977212" }).catch(console.error);
-
 const createWindow = () => {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1052,
     height: 798, // 30px for titlebar
     title: "Yume Nikki Online Project",
@@ -106,12 +104,10 @@ const createWindow = () => {
   mainWindow.setMenu(null);
   mainWindow.setTitle("Yume Nikki Online Project");
 
-  mainWindow.webContents.setMaxListeners(20);
+  mainWindow.webContents.setMaxListeners(12);
 
   mainWindow.on("closed", () => {
     saveSession();
-    client.clearActivity();
-    client.destroy();
     app.quit();
   });
 
@@ -136,10 +132,13 @@ const createWindow = () => {
     if (url.startsWith("https://yume.wiki") && !isDreamWorldMap(url)) {
       shell.openExternal(details.url); // Open URL in user's browser.
       return { action: "deny" }; // Prevent the app from opening the URL.
-    }
-    else if(gameName && typeof gameName === 'string' && !isDreamWorldMap(url)){
-      mainWindow.loadURL(`https://ynoproject.net/${gameName}`) // Load a new game instead of spawning a new electron window
-      return { action: "deny" }; 
+    } else if (
+      gameName &&
+      typeof gameName === "string" &&
+      !isDreamWorldMap(url)
+    ) {
+      mainWindow.loadURL(`https://ynoproject.net/${gameName}`); // Load a new game instead of spawning a new electron window
+      return { action: "deny" };
     }
     return { action: "allow" };
   });
@@ -153,64 +152,59 @@ const createWindow = () => {
   mainWindow.webContents.on("will-prevent-unload", (event) => {
     event.preventDefault();
   });
-  
-  mainWindow.loadURL("https://ynoproject.net/").then(() => {
-    clientLoop(mainWindow);
-  });
 };
 
 let isMax = false;
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Example: Setting a cookie if it exists in the store
   if (store.has("ynoproject_sessionId")) {
-    session.defaultSession.cookies.set({
-      url: "https://ynoproject.net",
-      name: "ynoproject_sessionId",
-      value: store.get("ynoproject_sessionId"),
-      sameSite: "strict",
-    });
+      session.defaultSession.cookies.set({
+          url: "https://ynoproject.net",
+          name: "ynoproject_sessionId",
+          value: store.get("ynoproject_sessionId"),
+          sameSite: "strict",
+      });
   }
+
+  // IPC Handlers for minimize and maximize
   ipcMain.on("minimize", () => {
-    const focusedWindow = BrowserWindow.getFocusedWindow();
-    if (focusedWindow) {
-      focusedWindow.minimize();
-    }
+      const focusedWindow = BrowserWindow.getFocusedWindow();
+      if (focusedWindow) {
+          focusedWindow.minimize();
+      }
   });
+
   ipcMain.on("maximize", () => {
-    const focusedWindow = BrowserWindow.getFocusedWindow();
-    if (focusedWindow) {
-      if (isMax) {
-        focusedWindow.unmaximize();
-      } else {
-        focusedWindow.maximize();
+      const focusedWindow = BrowserWindow.getFocusedWindow();
+      if (focusedWindow) {
+          if (isMax) {
+              focusedWindow.unmaximize();
+          } else {
+              focusedWindow.maximize();
+          }
+          isMax = !isMax;
       }
-      isMax = !isMax;
-    }
   });
+
+  // Create the main application window
   createWindow();
+
+  mainWindow.loadURL("https://ynoproject.net/");
+
+  // Initialize Discord RPC
+  try {
+      await connectDiscordRpc(); // Connect the Discord RPC client
+
+      // Start updating the rich presence with the current URL every 1500ms
+      setInterval(() => {
+          const currentURL = mainWindow.webContents.getURL(); // Get the current URL
+          updateRichPresence(currentURL); // Pass the URL to the update function
+      }, 1500);
+  } catch (error) {
+      console.error("Failed to connect Discord RPC:", error);
+  }
 });
-
-function clientLoop(win) {
-  const loop = () => {
-    const web = win.webContents;
-    web.executeJavaScript(`document.title`).then((title) => {
-      const splitTitle = title.split(" Online ");
-      if (splitTitle[1]?.trim() === "- YNOproject") {
-        if (splitTitle[0].trim() === "ゆめ2っき") {
-          updatePresence(web, client, "Yume 2kki");
-        } else {
-          updatePresence(web, client, splitTitle[0].trim());
-        }
-      } else {
-        updatePresence(web, client);
-      }
-    });
-
-    setTimeout(loop, 1500); // Add a 1000ms sleep interval (1 second)
-  };
-
-  loop();
-}
 
 function saveSession() {
   session.defaultSession.cookies

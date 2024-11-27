@@ -5,14 +5,15 @@ const parseGameName = (url) => {
 };
 
 const isDreamWorldMap = (url) => {
-    const imageExtensions = [".png", ".jpg", ".jpeg"];
-    let isImage = false;
-    if (url.startsWith("https://yume.wiki")) {
-      isImage = imageExtensions.some((ext) => url.endsWith(ext));
-    }
-    return isImage;
+  const imageExtensions = [".png", ".jpg", ".jpeg"];
+  let isImage = false;
+  if (url.startsWith("https://yume.wiki")) {
+    isImage = imageExtensions.some((ext) => url.endsWith(ext));
+  }
+  return isImage;
 };
 
 module.exports = {
-  parseGameName, isDreamWorldMap
+  parseGameName,
+  isDreamWorldMap,
 };

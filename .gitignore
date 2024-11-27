@@ -132,3 +132,5 @@ dist
 # Electron pack and dist output
 dist/
 dist-nodrpc/
+package-lock.json
+yarn.lock
