@@ -12,9 +12,3 @@ ipcRenderer.on("zoomin" , () => {
 ipcRenderer.on("zoomout" , () => {
   webFrame.setZoomFactor(webFrame.getZoomFactor() - 0.1);
 }); 
-
-ipcRenderer.on('log-app-version', (event, version) => {
-  console.log(`------------------------------`);
-  console.log(`ynodesktop version: ${version}`);
-  console.log(`------------------------------`);
-});

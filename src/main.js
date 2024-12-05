@@ -22,65 +22,85 @@ contextMenu({
   showSelectAll: false,
   showSearchWithGoogle: false,
   showInspectElement: false,
-  append: (browserWindow) => [
+  append: () => [
     {
       label: "Force Reload",
       click: () => {
-        browserWindow.webContents.reloadIgnoringCache();
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.reloadIgnoringCache();
+        } else {
+          console.error("Main window or webContents is not available.");
+        }
       },
     },
     {
       label: "Clear IndexedDB",
       click: () => {
-        dialog
-          .showMessageBox({
-            type: "question",
-            buttons: ["Yes", "No"],
-            title: "Clear IndexedDB",
-            message:
-              "Are you sure you want to clear IndexedDB? This should only be used if something is broken as it will delete your local save file.\nThis will also clear the cache and Local Storage.",
-          })
-          .then((result) => {
-            if (result.response == 0) {
-              dialog
-                .showMessageBox({
-                  type: "warning",
-                  buttons: ["Yes", "No"],
-                  title: "Clear IndexedDB",
-                  message:
-                    "ATTENTION: THIS WILL DELETE YOUR LOCAL SAVE FILE.\nAre you sure you want to continue?",
-                })
-                .then((result) => {
-                  if (result.response == 0) {
-                    session.defaultSession
-                      .clearStorageData({
-                        storages: ["indexdb", "cache", "localstorage"],
-                      })
-                      .then(() => {
-                        browserWindow.webContents.reloadIgnoringCache();
-                      });
-                  }
-                });
-            }
-          });
+        if (mainWindow && mainWindow.webContents) {
+          dialog
+            .showMessageBox({
+              type: "question",
+              buttons: ["Yes", "No"],
+              title: "Clear IndexedDB",
+              message:
+                "Are you sure you want to clear IndexedDB? This should only be used if something is broken as it will delete your local save file.\nThis will also clear the cache and Local Storage.",
+            })
+            .then((result) => {
+              if (result.response == 0) {
+                dialog
+                  .showMessageBox({
+                    type: "warning",
+                    buttons: ["Yes", "No"],
+                    title: "Clear IndexedDB",
+                    message:
+                      "ATTENTION: THIS WILL DELETE YOUR LOCAL SAVE FILE.\nAre you sure you want to continue?",
+                  })
+                  .then((result) => {
+                    if (result.response == 0) {
+                      session.defaultSession
+                        .clearStorageData({
+                          storages: ["indexdb", "cache", "localstorage"],
+                        })
+                        .then(() => {
+                          mainWindow.webContents.reloadIgnoringCache();
+                        });
+                    }
+                  });
+              }
+            });
+        } else {
+          console.error("Main window or webContents is not available.");
+        }
       },
     },
     {
       label: "Open Developer Tools",
       click: () => {
-        browserWindow.webContents.openDevTools();
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.openDevTools();
+        } else {
+          console.error("Main window or webContents is not available.");
+        }
       },
     },
     {
       label: "Zoom In",
       click: () => {
-        browserWindow.webContents.send("zoomin");
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send("zoomin");
+        } else {
+          console.error("Main window or webContents is not available.");
+        }
       },
     },
     {
       label: "Zoom Out",
       click: () => {
-        browserWindow.webContents.send("zoomout");
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send("zoomout");
+        } else {
+          console.error("Main window or webContents is not available.");
+        }
       },
     },
   ],
@@ -119,10 +139,6 @@ const createWindow = () => {
         document.querySelector('#content')?.scrollTo(0,0);
       }
     `); // Disable scroll ingame
-  });
-
-  mainWindow.webContents.on("devtools-opened", () => {
-    mainWindow.webContents.send("log-app-version", app.getVersion());
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -199,7 +215,7 @@ app.whenReady().then(async () => {
       // Start updating the rich presence with the current URL every 1500ms
       setInterval(() => {
           const currentURL = mainWindow.webContents.getURL(); // Get the current URL
-          updateRichPresence(currentURL); // Pass the URL to the update function
+          updateRichPresence(mainWindow.webContents, currentURL); // Pass the URL to the update function
       }, 1500);
   } catch (error) {
       console.error("Failed to connect Discord RPC:", error);

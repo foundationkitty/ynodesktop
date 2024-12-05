@@ -6,8 +6,7 @@ const client = new Client({
   clientId: "1311371561416265738",
 });
 
-// Function to update Discord Rich Presence
-async function updateRichPresence(currentURL) {
+async function updateRichPresence(webContents, currentURL) {
   let gameName = parseGameName(currentURL);
   if (!gameName) {
     try {
@@ -15,13 +14,26 @@ async function updateRichPresence(currentURL) {
         largeImageKey: "yno-logo",
         largeImageText: "Yume Nikki Online Project",
         state: "Choosing a door...",
-        instance: false, // Instance type
-        buttons: [
-            {
-                label: "Play YNOproject",
-                url: "https://ynoproject.net/", // Button URL
-            },
-        ]
+        instance: false,
+      });
+    } catch (error) {
+      console.error("Failed to update rich presence:", error);
+    }
+    return;
+  }
+
+  let location = await fetchLocationText(webContents);
+
+  if (!location || !location.locationText) {
+    try {
+      await client.user?.setActivity({
+        largeImageKey: `https://ynoproject.net/images/door_${gameName}.gif`,
+        largeImageText: gameName,
+        smallImageKey: "yno-logo",
+        smallImageText: "YNOProject",
+        details: `Dreaming on ${gameName}...`,
+        instance: false,
+        state: "Going to bed...",
       });
     } catch (error) {
       console.error("Failed to update rich presence:", error);
@@ -31,19 +43,13 @@ async function updateRichPresence(currentURL) {
 
   try {
     await client.user?.setActivity({
-      largeImageKey: "", // we need to find some good source of icons, I don't wanna upload them manually to discord portal like it was done before
-      largeImageText: "Yume Nikki Online Project",
-      smallImageKey: `https://ynoproject.net/images/door_${gameName}.gif`,
+      largeImageKey: `https://ynoproject.net/images/door_${gameName}.gif`,
+      largeImageText: gameName,
+      smallImageKey: "yno-logo",
       smallImageText: "YNOProject",
       details: `Dreaming on ${gameName}...`,
-      state: "Disconnected",
-      instance: false, // Instance type
-      buttons: [
-          {
-              label: "Play YNOproject",
-              url: "https://ynoproject.net/", // Button URL
-          },
-      ]
+      instance: false,
+      state: location.locationText,
     });
   } catch (error) {
     console.error("Failed to update rich presence:", error);
@@ -62,6 +68,32 @@ async function connectDiscordRpc() {
     console.error("Failed to connect Discord RPC:", error);
   }
 }
+
+async function fetchLocationText(webContents) {
+  try {
+    const location = await webContents.executeJavaScript(`
+      new Promise((resolve) => {
+        const checkElement = () => {
+          const locationElement = document.querySelector('#locationText a');
+          if (locationElement) {
+            const locationText = locationElement.innerText || null;
+            const locationUrl = locationElement.href || null;
+            resolve({ locationText, locationUrl });
+          } else {
+            resolve({null, null});
+            setTimeout(checkElement, 500); // Retry every 500ms
+          }
+        };
+        checkElement();
+      });
+    `);
+
+    return location;
+  } catch (error) {
+    return null;
+  }
+}
+
 
 // Export the functions and client
 module.exports = { updateRichPresence, connectDiscordRpc, client };
